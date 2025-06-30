@@ -1,13 +1,17 @@
-import React from 'react'
-import Navbar from '../../components/Navbar'
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 
 function Main() {
+  const location = useLocation();
+  const hideNavbar = location.pathname === '/login' || location.pathname === '/register';
+
   return (
     <div>
-        <Navbar/>
-        Main
+      {!hideNavbar && <Navbar />}
+      <Outlet />
     </div>
-  )
+  );
 }
 
-export default Main
+export default Main;

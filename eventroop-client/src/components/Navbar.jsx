@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Home, Calendar, Plus, User, LogOut } from "lucide-react";
 import { useAlert } from "./AlertContext";
+import { Link } from "react-router-dom";
 
 const mockUser = {
   name: "Toufikul Islam",
@@ -110,12 +111,12 @@ showAlert({
 
           <div className="hidden md:flex items-center">
             {!user ? (
-              <a
-                href="/login"
+              <Link
+                to={"/login"}
                 className="bg-white text-teal-700 font-semibold px-6 py-2 rounded-lg hover:bg-teal-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Sign In
-              </a>
+              </Link>
             ) : (
               <div className="relative">
                 <button
@@ -180,8 +181,8 @@ showAlert({
             
             <div className="pt-3 border-t border-gray-200">
               {!user ? (
-                <a
-                  href="/login"
+                <Link
+                  to={"/login"}
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
@@ -189,7 +190,7 @@ showAlert({
                   className="flex items-center justify-center space-x-2 bg-teal-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-teal-600 transition-colors"
                 >
                   <span>Sign In</span>
-                </a>
+                </Link>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-lg">
