@@ -107,7 +107,6 @@ export function AlertProvider({ children }) {
   );
 }
 
-// Custom Hook to use the alert
 export function useAlert() {
   const context = useContext(AlertContext);
   if (!context) {
