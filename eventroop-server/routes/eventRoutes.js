@@ -5,6 +5,8 @@ const verifyToken = require('../middlewares/verifyToken');
 
 router.get('/', verifyToken, eventController.getAllEvents);
 
+router.get('/my-events/:id', verifyToken, eventController.getMyEvents);
+
 router.post('/', verifyToken, eventController.createEvent);
 
 router.put('/:id', verifyToken, eventController.updateEvent);

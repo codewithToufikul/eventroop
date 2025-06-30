@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { useAuth } from "../../components/AuthContext";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,11 +14,13 @@ function Login() {
   } = useForm();
   const { login } = useAuth();
   const navigate = useNavigate()
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const onSubmit = async (data) => {
     try {
       await login(data.email, data.password);
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       const errorMessage =
         err?.response?.data?.message || err?.message || "Something went wrong!";

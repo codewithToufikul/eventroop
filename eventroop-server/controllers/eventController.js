@@ -9,6 +9,16 @@ exports.getAllEvents = async (req, res) => {
   }
 };
 
+exports.getMyEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const events = await Event.find({ postedById: id }).sort({ date: -1 });
+        res.json(events);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.createEvent = async (req, res) => {
   try {
     const { title, postedById, postedByName, date, location, description } = req.body;
