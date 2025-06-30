@@ -7,7 +7,8 @@ const eventSchema = new mongoose.Schema({
   date: String,
   location: { type: String, required: true },
   description: { type: String },
-  attendeeCount: { type: Number, default: 0 }
+  attendeeCount: { type: Number, default: 0 },
+  attendeeId: Array
 }, { timestamps: true });
 
 const Event = mongoose.model('Event', eventSchema);

@@ -1,53 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  CalendarDays, MapPin, UserPlus, Search, Filter,
-  Calendar, Users, Clock
-} from 'lucide-react';
-import useAllEvents from '../../Hooks/useAllEvents';
+  CalendarDays,
+  MapPin,
+  UserPlus,
+  Search,
+  Filter,
+  Calendar,
+  Users,
+  Clock,
+} from "lucide-react";
+import useAllEvents from "../../Hooks/useAllEvents";
+import { useAuth } from "../../components/AuthContext";
+import Loading from "../../components/Loading";
+import toast from "react-hot-toast";
+import axiosInstance from "../../Hooks/axiosInstance";
 
 function Events() {
-  const [joinedEvents, setJoinedEvents] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [customDate, setCustomDate] = useState('');
-  const [dateRangeStart, setDateRangeStart] = useState('');
-  const [dateRangeEnd, setDateRangeEnd] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customDate, setCustomDate] = useState("");
+  const [dateRangeStart, setDateRangeStart] = useState("");
+  const [dateRangeEnd, setDateRangeEnd] = useState("");
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const { events, loading, error } = useAllEvents();
-
-  useEffect(() => {
-    const savedJoined = JSON.parse(localStorage.getItem('joinedEvents')) || [];
-    setJoinedEvents(savedJoined);
-  }, []);
+  const [joiningEvents, setJoiningEvents] = useState(new Set());
+  const { events, loading, error, refetch } = useAllEvents();
+  const { user, userLoading } = useAuth();
 
   const getDateRange = (filter) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     switch (filter) {
-      case 'today':
+      case "today":
         return { start: today, end: new Date(today.getTime() + 86400000) };
-      case 'current-week':
+      case "current-week":
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - today.getDay());
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 7);
         return { start: startOfWeek, end: endOfWeek };
-      case 'last-week':
+      case "last-week":
         const lastWeekStart = new Date(today);
         lastWeekStart.setDate(today.getDate() - today.getDay() - 7);
         const lastWeekEnd = new Date(lastWeekStart);
         lastWeekEnd.setDate(lastWeekStart.getDate() + 7);
         return { start: lastWeekStart, end: lastWeekEnd };
-      case 'current-month':
+      case "current-month":
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        const endOfMonth = new Date(
+          today.getFullYear(),
+          today.getMonth() + 1,
+          1
+        );
         return { start: startOfMonth, end: endOfMonth };
-      case 'last-month':
-        const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      case "last-month":
+        const lastMonthStart = new Date(
+          today.getFullYear(),
+          today.getMonth() - 1,
+          1
+        );
         const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 1);
         return { start: lastMonthStart, end: lastMonthEnd };
-      case 'custom-date':
+      case "custom-date":
         if (customDate) {
           const selectedDate = new Date(customDate);
           const nextDay = new Date(selectedDate);
@@ -55,7 +69,7 @@ function Events() {
           return { start: selectedDate, end: nextDay };
         }
         return null;
-      case 'date-range':
+      case "date-range":
         if (dateRangeStart && dateRangeEnd) {
           const startDate = new Date(dateRangeStart);
           const endDate = new Date(dateRangeEnd);
@@ -72,16 +86,17 @@ function Events() {
     let filtered = events;
 
     if (searchTerm) {
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    if (dateFilter !== 'all') {
+    if (dateFilter !== "all") {
       const dateRange = getDateRange(dateFilter);
       if (dateRange) {
-        filtered = filtered.filter(event => {
+        filtered = filtered.filter((event) => {
           const eventDate = new Date(event.date);
           return eventDate >= dateRange.start && eventDate < dateRange.end;
         });
@@ -89,13 +104,63 @@ function Events() {
     }
 
     setFilteredEvents(filtered);
-  }, [events, searchTerm, dateFilter, customDate, dateRangeStart, dateRangeEnd]);
+  }, [
+    events,
+    searchTerm,
+    dateFilter,
+    customDate,
+    dateRangeStart,
+    dateRangeEnd,
+  ]);
 
-  const handleJoin = (id) => {
-    if (joinedEvents.includes(id)) return;
-    const updated = [...joinedEvents, id];
-    setJoinedEvents(updated);
-    localStorage.setItem('joinedEvents', JSON.stringify(updated));
+  const handleJoin = async (eventId) => {
+    if (!user?._id) {
+      toast.error("Please log in to join events");
+      return;
+    }
+    setJoiningEvents((prev) => new Set([...prev, eventId]));
+
+    try {
+      const response = await axiosInstance.post(
+        `/api/events/join-event/${eventId}`,
+        {
+          userId: user._id,
+        }
+      );
+
+      toast.success("Successfully joined the event!");
+      setFilteredEvents((prevEvents) =>
+        prevEvents.map((event) =>
+          event._id === eventId
+            ? {
+                ...event,
+                attendeeId: [...event.attendeeId, user._id],
+                attendeeCount: event.attendeeCount + 1,
+              }
+            : event
+        )
+      );
+
+      if (refetch) {
+        refetch();
+      }
+    } catch (error) {
+      console.error("Error joining event:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to join event. Please try again.";
+
+      toast.error(errorMessage);
+    } finally {
+      setJoiningEvents((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(eventId);
+        return newSet;
+      });
+    }
   };
 
   const isEventToday = (date) => {
@@ -108,8 +173,13 @@ function Events() {
     return new Date(date) > new Date();
   };
 
-  if (loading) return <p className="text-center mt-10">⏳ Loading events...</p>;
-  if (error) return <p className="text-center text-red-500 mt-10">❌ {error}</p>;
+  const isUserJoined = (event) => {
+    return event.attendeeId && event.attendeeId.includes(user?._id);
+  };
+
+  if (loading || userLoading) return <Loading />;
+  if (error)
+    return <p className="text-center text-red-500 mt-10">❌ {error}</p>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50">
@@ -118,7 +188,9 @@ function Events() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-2">
             🎉 Discover Amazing Events
           </h1>
-          <p className="text-gray-600 text-lg">Find and join events that inspire you</p>
+          <p className="text-gray-600 text-lg">
+            Find and join events that inspire you
+          </p>
         </div>
 
         {/* Filters */}
@@ -141,9 +213,9 @@ function Events() {
                   value={dateFilter}
                   onChange={(e) => {
                     setDateFilter(e.target.value);
-                    setCustomDate('');
-                    setDateRangeStart('');
-                    setDateRangeEnd('');
+                    setCustomDate("");
+                    setDateRangeStart("");
+                    setDateRangeEnd("");
                   }}
                   className="pl-10 pr-8 py-3 border border-gray-200 rounded-xl bg-white min-w-[200px] focus:ring-2 focus:ring-teal-500"
                 >
@@ -160,10 +232,12 @@ function Events() {
             </div>
 
             {/* Custom Date Picker */}
-            {dateFilter === 'custom-date' && (
+            {dateFilter === "custom-date" && (
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
                 <Calendar className="w-5 h-5 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Select Date:</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Select Date:
+                </label>
                 <input
                   type="date"
                   value={customDate}
@@ -174,10 +248,12 @@ function Events() {
             )}
 
             {/* Date Range Picker */}
-            {dateFilter === 'date-range' && (
+            {dateFilter === "date-range" && (
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl flex-wrap">
                 <Calendar className="w-5 h-5 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Date Range:</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Date Range:
+                </label>
                 <input
                   type="date"
                   value={dateRangeStart}
@@ -200,85 +276,123 @@ function Events() {
         {filteredEvents.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No events found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No events found
+            </h3>
+            <p className="text-gray-500">
+              Try adjusting your search or filters
+            </p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-            {filteredEvents.map(event => (
-              <div key={event._id} className="group bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h2 className="text-xl font-bold text-gray-800 group-hover:text-teal-600">
-                          {event.title}
-                        </h2>
-                        {isEventToday(event.date) && (
-                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">Today</span>
-                        )}
-                        {isEventUpcoming(event.date) && !isEventToday(event.date) && (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Upcoming</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Posted by <span className="font-medium text-gray-700">{event.postedByName}</span>
-                      </p>
-                    </div>
-                  </div>
+            {filteredEvents.map((event) => {
+              const userJoined = isUserJoined(event);
+              const isJoining = joiningEvents.has(event._id);
 
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <div className="w-10 h-10 bg-teal-100 flex items-center justify-center rounded-lg">
-                        <CalendarDays className="w-5 h-5 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {new Date(event.date).toLocaleDateString('en-US', {
-                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                          })}
-                        </p>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(event.date).toLocaleTimeString('en-US', {
-                            hour: '2-digit', minute: '2-digit'
-                          })}
+              return (
+                <div
+                  key={event._id}
+                  className="group bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100"
+                >
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h2 className="text-xl font-bold text-gray-800 group-hover:text-teal-600">
+                            {event.title}
+                          </h2>
+                          {isEventToday(event.date) && (
+                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                              Today
+                            </span>
+                          )}
+                          {isEventUpcoming(event.date) &&
+                            !isEventToday(event.date) && (
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                                Upcoming
+                              </span>
+                            )}
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                          Posted by{" "}
+                          <span className="font-medium text-gray-700">
+                            {event.postedByName}
+                          </span>
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <div className="w-10 h-10 bg-blue-100 flex items-center justify-center rounded-lg">
-                        <MapPin className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="font-medium text-gray-800">{event.location}</span>
-                    </div>
-                  </div>
 
-                  <p className="text-gray-700 mb-6 leading-relaxed">{event.description}</p>
-
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <div className="w-8 h-8 bg-gray-100 flex items-center justify-center rounded-lg">
-                        <Users className="w-4 h-4" />
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <div className="w-10 h-10 bg-teal-100 flex items-center justify-center rounded-lg">
+                          <CalendarDays className="w-5 h-5 text-teal-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800">
+                            {new Date(event.date).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(event.date).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <span className="font-medium">{event.attendeeCount} attendees</span>
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <div className="w-10 h-10 bg-blue-100 flex items-center justify-center rounded-lg">
+                          <MapPin className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium text-gray-800">
+                          {event.location}
+                        </span>
+                      </div>
                     </div>
-                    <button
-                      disabled={joinedEvents.includes(event._id)}
-                      onClick={() => handleJoin(event._id)}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                        joinedEvents.includes(event._id)
-                          ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:scale-105 shadow-lg'
-                      }`}
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      {joinedEvents.includes(event._id) ? 'Joined' : 'Join Event'}
-                    </button>
+
+                    <p className="text-gray-700 mb-6 leading-relaxed">
+                      {event.description}
+                    </p>
+
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center rounded-lg">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium">
+                          {event.attendeeCount || 0} attendees
+                        </span>
+                      </div>
+                      <button
+                        disabled={userJoined || isJoining || !user}
+                        onClick={() => handleJoin(event._id)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                          userJoined
+                            ? "bg-green-100 text-green-700 cursor-not-allowed"
+                            : isJoining
+                            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                            : !user
+                            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                            : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:scale-105 shadow-lg"
+                        }`}
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        {isJoining
+                          ? "Joining..."
+                          : userJoined
+                          ? "✓ Joined"
+                          : "Join Event"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

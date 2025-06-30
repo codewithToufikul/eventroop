@@ -31,11 +31,11 @@ export const router = createBrowserRouter([
             },
             {
                 path: '/add-event',
-                element: <AddEvent/>
+                element: <PrivateRoute><AddEvent/></PrivateRoute>
             },
             {
                 path: "/my-events",
-                element: <MyEvents/>
+                element: <PrivateRoute><MyEvents/></PrivateRoute>
             }
                 
 

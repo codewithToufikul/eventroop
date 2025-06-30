@@ -23,23 +23,25 @@ function MyEvents() {
     location: ''
   });
 
-  useEffect(() => {
-    const fetchMyEvents = async () => {
-      try {
-        setLoading(true);
-        const res = await axiosInstance.get(`/api/events/my-events/${user._id}`);
-        setMyEvents(res.data);
-      } catch (err) {
-        console.error("❌ Failed to fetch my events:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user?._id) {
-      fetchMyEvents();
+useEffect(() => {
+  const fetchMyEvents = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/api/events/my-events/${user._id}`);
+      setMyEvents(res.data);
+    } catch (err) {
+      console.error("❌ Failed to fetch my events:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
+  };
+
+  if (!userLoading && user?._id) {
+    fetchMyEvents();
+  }
+}, [user, userLoading]);
+
+if (userLoading || loading) return <Loading />;
 
   const handleUpdateClick = (event) => {
     setSelectedEvent(event);
@@ -120,7 +122,7 @@ const handleDeleteEvent = async (eventId) => {
     };
   };
 
-  if (userLoading || loading) return <Loading />;
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50 p-6">

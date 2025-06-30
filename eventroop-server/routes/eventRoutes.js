@@ -13,4 +13,6 @@ router.put('/:id', verifyToken, eventController.updateEvent);
 
 router.delete('/:id', verifyToken, eventController.deleteEvent);
 
+router.post('/join-event/:eventId', verifyToken, eventController.joinEvent)
+
 module.exports = router;

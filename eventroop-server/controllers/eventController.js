@@ -51,3 +51,26 @@ exports.deleteEvent = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+exports.joinEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { userId } = req.body;
+    console.log(userId, eventId)
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    if (event.attendeeId.includes(userId)) {
+      return res.status(400).json({ message: "You already joined this event!" });
+    }
+
+    event.attendeeId.push(userId);
+    event.attendeeCount = event.attendeeId.length; 
+
+    await event.save();
+    res.json({ message: "Joined event successfully!", event });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
