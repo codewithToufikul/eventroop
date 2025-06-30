@@ -3,6 +3,7 @@ import Main from "./Main/Main";
 import Register from "./Register/Register";
 import Login from "./Login/Login";
 import Home from "./Home/Home";
+import Events from "./Events/Events";
 
 export const router = createBrowserRouter([
     {
@@ -20,7 +21,14 @@ export const router = createBrowserRouter([
             {
                 path: '/login',
                 element: <Login/>
+            },
+            {
+                path: '/events',
+                element: <Events/>
             }
+                
+
+            
         ]
     }
 ])

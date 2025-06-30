@@ -9,7 +9,7 @@ function Main() {
   return (
     <div>
       {!hideNavbar && <Navbar />}
-      <div className=' max-w-[1200px] mx-auto'>
+      <div className=' '>
            <Outlet />
       </div>
     </div>

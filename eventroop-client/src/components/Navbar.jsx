@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Home, Calendar, Plus, User, LogOut } from "lucide-react";
 import { useAlert } from "./AlertContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import Loading from "./Loading";
 
@@ -14,18 +14,13 @@ const mockUser = {
 function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeRoute, setActiveRoute] = useState("/");
   const { showAlert } = useAlert();
-      const { user, userLoading, logout } = useAuth();
+  const { user, userLoading, logout } = useAuth();
+  const location = useLocation();
+  const activeRoute = location.pathname;
 
-  useEffect(() => {
-    const path = window.location.pathname;
-    setActiveRoute(path);
-  }, []);
-    if (userLoading) {
-    return (
-      <Loading/>
-    );
+  if (userLoading) {
+    return <Loading />;
   }
 
   const handleLogout = () => {
@@ -42,8 +37,7 @@ function Navbar() {
     });
   };
 
-  const handleRouteClick = (route) => {
-    setActiveRoute(route);
+  const handleRouteClick = () => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
   };
@@ -62,12 +56,9 @@ function Navbar() {
     if (!item.showAlways && !user) return null;
 
     return (
-      <a
-        href={item.path}
-        onClick={(e) => {
-          e.preventDefault();
-          handleRouteClick(item.path);
-        }}
+      <Link
+        to={item.path}
+        onClick={handleRouteClick}
         className={`
           ${
             isMobile
@@ -89,7 +80,7 @@ function Navbar() {
         {!isMobile && isActive && (
           <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
         )}
-      </a>
+      </Link>
     );
   };
 
@@ -205,10 +196,7 @@ function Navbar() {
               {!user ? (
                 <Link
                   to={"/login"}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={handleRouteClick}
                   className="flex items-center justify-center space-x-2 bg-teal-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-teal-600 transition-colors"
                 >
                   <span>Sign In</span>
