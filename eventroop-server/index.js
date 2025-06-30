@@ -14,14 +14,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors({
-  origin: "http://localhost:5173", // frontend origin
+  origin: "http://localhost:5173",
   credentials: true
 }));
-// Middleware
-// app.use(cors());
+
 app.use(express.json());
 
-// MongoDB connect using Mongoose
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -35,14 +33,15 @@ mongoose.connect(uri, {
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
+const eventRoutes = require("./routes/eventRoutes")
 
-// Default route
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes)
+
 app.get("/", (req, res) => {
-  res.send("Hello World from MERN Event App 👋");
+  res.send("Hello World from Event App");
 });
 
-// Start server
 app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
 });
