@@ -26,6 +26,8 @@ async function run() {
     app.get("/", (req, res) => {
       res.send("Hello World!");
     });
+
+    
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
@@ -37,5 +39,5 @@ async function run() {
 run().catch(console.dir);
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`app listening on port ${port}`);
 });
