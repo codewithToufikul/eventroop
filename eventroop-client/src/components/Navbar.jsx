@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Menu, X, Home, Calendar, Plus, User, LogOut } from "lucide-react";
 import { useAlert } from "./AlertContext";
 import { Link } from "react-router-dom";
+import { useAuth } from "./AuthContext";
+import Loading from "./Loading";
 
 const mockUser = {
   name: "Toufikul Islam",
@@ -10,24 +12,29 @@ const mockUser = {
 };
 
 function Navbar() {
-  const [user, setUser] = useState(mockUser);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState("/");
   const { showAlert } = useAlert();
+      const { user, userLoading, logout } = useAuth();
 
   useEffect(() => {
     const path = window.location.pathname;
     setActiveRoute(path);
   }, []);
+    if (userLoading) {
+    return (
+      <Loading/>
+    );
+  }
 
   const handleLogout = () => {
-showAlert({
+    showAlert({
       message: "Are you sure you want to logout?",
       onConfirm: () => {
-    setUser(null);
-    setDropdownOpen(false);
-    setMobileMenuOpen(false);
+        logout();
+        setDropdownOpen(false);
+        setMobileMenuOpen(false);
       },
       onCancel: () => {
         console.log("logout cancelled");
@@ -51,7 +58,7 @@ showAlert({
   const NavLink = ({ item, isMobile = false }) => {
     const isActive = activeRoute === item.path;
     const Icon = item.icon;
-    
+
     if (!item.showAlways && !user) return null;
 
     return (
@@ -62,17 +69,18 @@ showAlert({
           handleRouteClick(item.path);
         }}
         className={`
-          ${isMobile 
-            ? `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'bg-teal-600 text-white shadow-lg' 
-                  : 'text-gray-700 hover:bg-teal-50 hover:text-teal-700'
-              }`
-            : `relative flex items-center space-x-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                isActive 
-                  ? 'bg-teal-600 text-white shadow-lg' 
-                  : 'text-teal-100 hover:text-white hover:bg-teal-600'
-              }`
+          ${
+            isMobile
+              ? `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? "bg-teal-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                }`
+              : `relative flex items-center space-x-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  isActive
+                    ? "bg-teal-600 text-white shadow-lg"
+                    : "text-teal-100 hover:text-white hover:bg-teal-600"
+                }`
           }
         `}
       >
@@ -128,14 +136,28 @@ showAlert({
                     alt="Profile"
                     className="w-8 h-8 rounded-full border-2 border-white"
                   />
-                  <span className="font-medium text-sm">{user.name.split(' ')[0]}</span>
-                  <div className={`transform transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}>
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <span className="font-medium text-sm">
+                    {user.name.split(" ")[0]}
+                  </span>
+                  <div
+                    className={`transform transition-transform ${
+                      dropdownOpen ? "rotate-180" : ""
+                    }`}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                 </button>
-                
+
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-200">
                     <div className="px-4 py-3 border-b border-gray-100">
@@ -178,7 +200,7 @@ showAlert({
             {navigationItems.map((item) => (
               <NavLink key={item.path} item={item} isMobile />
             ))}
-            
+
             <div className="pt-3 border-t border-gray-200">
               {!user ? (
                 <Link
