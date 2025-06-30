@@ -1,43 +1,45 @@
 const express = require("express");
 const cors = require("cors");
+const dotenv = require("dotenv");
 require("dotenv").config();
-const app = express();
-const port = 3000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const mongoose = require("mongoose");
+const bcrypt = require('bcryptjs');
 const databaseUser = process.env.DATABASE_USER;
 const databasePassword = process.env.DATABASE_PASSWORD;
+console.log(databaseUser)
 const uri =
-  `mongodb+srv://${databaseUser}:${databasePassword}@cluster0.ivo4yuq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+  `mongodb+srv://${databaseUser}:${databasePassword}@cluster0.ivo4yuq.mongodb.net/eventroop?retryWrites=true&w=majority&appName=Cluster0`;
+dotenv.config();
 
+const app = express();
+const port = process.env.PORT || 3000;
 
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
+// MongoDB connect using Mongoose
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log("✅ Connected to MongoDB with mongoose");
+})
+.catch(err => {
+  console.error("❌ MongoDB connection error:", err);
 });
 
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    app.get("/", (req, res) => {
-      res.send("Hello World!");
-    });
+// Routes
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
 
-    
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+// Default route
+app.get("/", (req, res) => {
+  res.send("Hello World from MERN Event App 👋");
+});
 
+// Start server
 app.listen(port, () => {
-  console.log(`app listening on port ${port}`);
+  console.log(`🚀 Server running on http://localhost:${port}`);
 });
