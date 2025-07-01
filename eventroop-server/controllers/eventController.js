@@ -2,7 +2,7 @@ const Event = require('../models/Event');
 
 exports.getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: -1 });
+    const events = await Event.find();
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -12,7 +12,7 @@ exports.getAllEvents = async (req, res) => {
 exports.getMyEvents = async (req, res) => {
     try {
         const { id } = req.params;
-        const events = await Event.find({ postedById: id }).sort({ date: -1 });
+        const events = await Event.find({ postedById: id });
         res.json(events);
     } catch (error) {
         res.status(500).json({ message: error.message });

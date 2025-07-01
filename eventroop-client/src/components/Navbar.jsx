@@ -98,7 +98,7 @@ function Navbar() {
               <div className="absolute inset-0 bg-white rounded-full opacity-0 group-hover:opacity-10 transition-opacity"></div>
             </div>
             <span className="font-bold text-xl select-none tracking-wide">
-              Event<span className="text-teal-200">roop</span>
+              Event<span className="text-teal-200">Roop</span>
             </span>
           </div>
 
