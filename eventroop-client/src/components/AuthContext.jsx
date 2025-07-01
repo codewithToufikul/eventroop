@@ -5,10 +5,10 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userLoading, setUserLoading] = useState(true); // default true
+  const [userLoading, setUserLoading] = useState(true); 
 
   const login = async (email, password) => {
-    setUserLoading(true); // Login start
+    setUserLoading(true); 
     try {
       const res = await axiosInstance.post("/api/auth/login", { email, password });
       const { token, user } = res.data;
